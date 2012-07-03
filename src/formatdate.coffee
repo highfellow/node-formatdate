@@ -30,21 +30,7 @@ pad = (len, n, str="0") ->
     res = str+res while res.length < len
     res
 
-# constants (bot changeable)
-
-exports.options = defaults =
-    update: on
-    hook:
-        interval: 5000 # 5 seconds
-    css:
-        ago: "ago"
-    max:
-        amount: 42
-        unit:   9  # century
-    min:
-        amount: 1
-        unit: 2  # minute
-        string: "a moment"  # string to show when below min.
+# constants (changeable)
 
 exports.locale = locale =
     'default':"%T"
@@ -75,9 +61,11 @@ exports.locale = locale =
         opts.min.amount ?= defaults.min.amount
         opts.min.string ?= defaults.min.string
         # turn ago off when a special amount of special unit is reached (defaults to strftime)
-        return off if unit is opts.max.unit and amount > opts.max.amount
+        if unit > opts.max.unit or ( unit is opts.max.unit and amount > opts.max.amount )
+            return off
         # return special string when below a minimum amount of a minimum unit.
-        return opts.min.string + " ago" if unit < opts.min.unit or ( unit is opts.min.unit and amount < opts.min.amount )
+        if unit < opts.min.unit or ( unit is opts.min.unit and amount < opts.min.amount )
+            return opts.min.string
         res = ""
         res += amount if amount > 1
         res += "a" if amount <= 1
@@ -167,35 +155,58 @@ exports.hook = hook = (elems, opts = {}) ->
     opts.update ?= defaults.update
     opts.css.ago ?= defaults.css.ago
     opts.hook.interval ?= defaults.hook.interval
-
+    opts.hook.update ?= defaults.hook.update
     assimilate_elements = ->
-
-        dates = $(elems).filter("[data-date]")
-        dates.each ->
-            el = $(this)
-            format = el.attr('data-strftitle') or opts.format
-            el.attr 'title', strftime format, el.attr('data-date'), opts.locale
-            format = el.attr('data-strftime') or opts.format
-            if el.hasClass opts.css.ago
-                el.text from_now el.attr('data-date'), deep_merge opts, {format}
-            else
-                el.text strftime format, el.attr('data-date'), opts.locale
-            return
-
-        $(elems).not(dates).each ->
-            el = $(this)
-            el.attr 'data-date', el.text()
-            format = el.attr('data-strftitle') or opts.format
-            el.attr 'title', strftime format, el.text(), opts.locale
-            format = el.attr('data-strftime') or opts.format
-            if el.hasClass opts.css.ago
-                el.text from_now el.text(), deep_merge opts, {format}
-            else
-                el.text strftime format, el.text(), opts.locale
-            return
-
+        opts.hook.update(elems, opts)
     setInterval assimilate_elements, opts.hook.interval if opts.update
     do assimilate_elements
+
+
+hook.update = (el, opts = {}) ->
+    # either somthing custom or a <time> element
+    date = el?.attr?('data-date') ? el?.attr?('datetime')
+    return if not date?
+    format = el.attr('data-strftitle') or opts.format
+    el.attr 'title', strftime format, date, opts.locale
+    format = el.attr('data-strftime') or opts.format
+    cls = el.attr('class') ? ""
+    if cls.indexOf(opts.css.ago) isnt -1
+        el.text from_now date, deep_merge opts, {format}
+    else
+        el.text strftime format, date, opts.locale
+    return
+
+# update the ui with helpers
+
+hook.update.dynamictemplate = (elems, opts = {}) ->
+    for el in elems # asume, that this is a list of elements with time
+        hook.update(el, opts)
+    return
+
+
+hook.update.jQuery = (elems, opts = {}) ->
+    $(elems)
+        .filter("time, [data-date]")
+        .each( -> hook.update($(this), opts))
+
+
+# defaults (changeable)
+
+exports.options = defaults =
+    update: on
+    hook:
+        interval: 5000 # 5 seconds
+        update:   hook.update.jQuery
+    css:
+        ago: "ago"
+    max:
+        amount: 42
+        unit:   9  # century
+    min:
+        amount: 5
+        unit: 1  # second
+        string: "just now"  # string to show when below min.
+
 
 # export to jquery if on browser side
 
