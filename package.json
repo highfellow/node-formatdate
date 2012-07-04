@@ -10,7 +10,7 @@
 , "scripts": {
     "test": "./benchmark",
     "postinstall": "cake build"}
-, "devDependencies": {
+, "dependencies": {
     "browserify": "1.6.1",
     "scopify": ">= 0.2.1",
     "muffin": "0.2.6",
