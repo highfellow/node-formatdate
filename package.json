@@ -9,8 +9,8 @@
 , "keywords": ["format", "date", "live", "time", "strftime", "css", "hook"]
 , "scripts": {
     "test": "./benchmark",
-    "postinstall": "cake build"}
-, "dependencies": {
+    "prepublish": "cake build"}
+, "devDependencies": {
     "browserify": "1.6.1",
     "scopify": ">= 0.2.1",
     "muffin": "0.2.6",
