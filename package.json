@@ -9,7 +9,7 @@
 , "keywords": ["format", "date", "live", "time", "strftime", "css", "hook"]
 , "scripts": {
     "test": "./benchmark",
-    "prepublish": "cake build"}
+    "postinstall": "cake build"}
 , "devDependencies": {
     "browserify": "1.6.1",
     "scopify": ">= 0.2.1",
